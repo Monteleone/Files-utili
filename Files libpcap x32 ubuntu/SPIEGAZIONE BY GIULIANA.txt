@@ -1,0 +1,9 @@
+Dunque scarica questi 3 deb e posizionati da terminale nella cartella
+in cui si trovano.
+Poi digiti questi 3 comandi, in questo ordine, uno alla volta:
+
+dpkg -i libpcap0.8_1.1.1-2_i386.deb
+dpkg -i libpcap0.8-dev_1.1.1-2_i386.deb
+dpkg -i libpcap-dev_1.1.1-2_all.deb
+
+E' un comando per spacchettare, semplicemente. Incrocio le dita.
