@@ -1,4 +1,4 @@
 #definisco l'indirizzo della mia interfaccia e la mia rete
 ifconfig eth0:1 10.16.1.2/24
 #definitsco gw di default
-route add default gw 10.16.2.1
+route add default gw 10.16.1.1
