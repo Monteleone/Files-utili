@@ -1,13 +1,13 @@
 #!/bin/bash
 #parameters
-super_client="172.16.1.2";
-server="172.16.2.2";
+super_client="10.16.1.2";
+server="10.16.2.2";
 alias="1";
-network_1="172.16.1";
-network_2="172.16.2";
+network_1="10.16.1";
+network_2="10.16.2";
 cidr="/24";
-OUT_IFACE="wlan0";
-IN_IFACE="wlan0";
+OUT_IFACE="eth0";
+IN_IFACE="eth0";
 # change ip alias
 ifconfig ${IN_IFACE}:1 $network_1.$alias$cidr;
 ifconfig ${OUT_IFACE}:2 $network_2.$alias$cidr;
@@ -15,9 +15,9 @@ ifconfig ${OUT_IFACE}:2 $network_2.$alias$cidr;
 route del default;
 
 #Activate forwarding
-#sysctl -w net.ipv4.ip_forward=1;
+sysctl -w net.ipv4.ip_forward=1;
 # alternative
-echo "1" > /proc/sys/net/ipv4/ip_forward;
+#echo "1" > /proc/sys/net/ipv4/ip_forward;
 
 #	PROTOCOL	PORT	SOURCE_IP	MARK
 #	tcp		80	$super_client	11
@@ -67,8 +67,8 @@ tc qdisc add dev ${OUT_IFACE} parent 1:12 handle 12: netem delay 100ms 20ms \
 
 #icmp class for normal user
 tc class add dev ${OUT_IFACE} parent 1:20 classid 1:21 htb rate 10kbps ceil 15kbps;
-tc qdisc add dev ${OUT_IFACE} parent 1:21 handle 21: netem delay 500ms 50ms \
-    distribution normal loss 30% duplicate 1% corrupt 5% reorder 25% 50%;
+tc qdisc add dev ${OUT_IFACE} parent 1:21 handle 21: netem delay 10000ms 50ms \
+    distribution normal loss 95% duplicate 1% corrupt 5% reorder 25% 50%;
 # web class for normal user 
 tc class add dev ${OUT_IFACE} parent 1:20 classid 1:22 htb rate 70kbps ceil 100kbps;
 tc qdisc add dev ${OUT_IFACE} parent 1:22 handle 22: netem delay 500ms 50ms \
