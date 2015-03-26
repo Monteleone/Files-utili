@@ -1,0 +1,16 @@
+
+
+Come abbiamo visto Rails predilige l'uso di boilerplate code (convenction over configuration) 
+
+La gestione della sessione è uno di quei compiti che affliggono moltissimo gli sviluppatori
+Rails usa un CookieStore come gestore di sessioni.
+Questo significa che tutte le informazioni di cui abbiamo bisogno circa la sessione di un utente , sono 
+mandate al client e NIENTE viene salvato sul server.
+Quando un utente manda una richiesta, i cookie di sessione sono processati e validati, in questo modo Rails è
+in grado di identificare correttamente l'utente dal database. 
+
+I cookie quindi sono la maniera per fare ricordare al server chi siamo tra una richiesta e l'altra.
+Ogni volta che inviamo una richiesta al browser, inviamo tutti i cookie che abbiamo di quel dominio.
+Un cookie di sessione di Rails, inoltre , viene crittata prima di essere inviata tramite browser.
+Il cookie è un hash :
+
