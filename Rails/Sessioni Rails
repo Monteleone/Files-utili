@@ -14,3 +14,20 @@ Ogni volta che inviamo una richiesta al browser, inviamo tutti i cookie che abbi
 Un cookie di sessione di Rails, inoltre , viene crittata prima di essere inviata tramite browser.
 Il cookie è un hash :
 
+
+cookie = {
+  "session_id": "Value",
+  "_csrf_token": "token",
+  "user_id": "1"
+}
+
+Una sessione normalmente consiste in un hash di valori e session id.
+Ogni cookie mandato al client include la sessione dell'id.
+In Rails , per salvare e riprendere i valori di una sessione , possiamo usare il seguente metodo:
+
+session[:user_id] = @current_user.id
+User.find(session[:user_id])
+
+Un session id è una stringa random
+
+
