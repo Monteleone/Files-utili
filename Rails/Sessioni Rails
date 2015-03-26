@@ -28,6 +28,10 @@ In Rails , per salvare e riprendere i valori di una sessione , possiamo usare il
 session[:user_id] = @current_user.id
 User.find(session[:user_id])
 
-Un session id è una stringa random
+Un session id è una stringa random, o qualcosa di simile
+
+Nel progetto ho usato come id del carrello (per esempio) l'identificatore univoco della Tabella carts del database
+ho preso l'id del carrello appena creato e l'ho salvato nella sessione (nel' hash della sessione)
+
 
 
