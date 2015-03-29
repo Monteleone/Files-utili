@@ -1,0 +1,147 @@
+
+Funzionamento del carrello
+
+
+Cosa dobbiamo fare:
+
+-Sfogliare un catalogo
+-Scegliere dei prodotti
+-Inserirli in un carrello
+-Ripetere
+
+
+I protagonisti di questo scenario , quindi , sono :
+
+-Prodotto
+-Catalogo
+-Carrello
+
+
+
+Per dare vita al carrello creiamo un modulo ruby
+Un modulo è una raccolta di metodi (funzioni) e costanti per fare qualcosa. Quello che in altri linguaggi namespace o package o module (sì, in Python). Quando si vuole usare un modulo in Ruby basta includerlo nel programma.I moduli non devono essere instanziati :)
+
+
+Dobbiamo mantenere un carrello nel database (nel carrello metteremo tutti i prodotti che vogliamo acquistare). Manterremo l'ID del nostro carrello (cart.id) all'interno della nostra sessione.
+Ogni volta che aggiungeremo un prodotto , recuperiamo l'identità della sessione e la utilizzeremo
+per trovare il carrello nel database!
+
+
+Per prima cosa creiamo il carrello con il generate scaffold
+Ricordiamo che il Model è il guardiano del magazzino, cioè colui che gestisce la business logic
+Ha il compito di prelevare i dati dal database
+I nomi delle tabelle del DB sono , per convenzione , minuscoli e con l' underscore per separare
+le parole. Inoltre, rispetto al nome del Model il nome della tabella è al plurale.
+
+ES:  MODEL   : Product
+		 DBTABLE : products
+
+Dopo avere creato il carrello "Cart" quindi la tabella carts nel DB
+creiamo un module per gestire nella sessione l'ID del nostro carrello
+
+def set_cart
+	@cart = Cart.find(session[:cart_id])
+rescue ActiveRecerd::RecordNotFound
+	@cart = Cart.create
+	session[:cart_id] = @cart.id
+end
+
+Questo metodo viene settato come private in modo che sia visibile tra i controller ma mai
+come azione per Rails.
+
+
+Un carrello contiene una serie di prodotti
+Diciamo che un carrello contiene una insieme di LineItem (line_items)
+qua salveremo i riferimenti tra le righe d'ordine , i carrelli e i prodotti
+
+Diciamo che un LineItem appartiene a un prodotto
+Diciamo che un LineItem appartiene a un carrello
+
+Cioè , non possono esistere LineItem con prodotti o carrello non dapprima creati
+LineItem è figlio di prodotto e carrello!
+Per capire quando mettere belongs_to() bisogna guardare le chiavi esterne di una tabella.
+Se una tabella ha delle chiavi esterne , allora bisogna mettere un belongs_to per ogni chiave esterna.
+L'aggiunta dei belongs_to() aggiungono delle funzionalità alla nostra classe
+Permettono ,cioè, di recuperare oggetti delle tabelle delle quali ha le chiavi esterne
+
+Dato che LineItem appartiene a un prodotto , allora possiamo visualizzare il suddetto prodotto
+Ovviamente lato Product metteremo has_many :line_items
+cioè ogni prodotto ha piu' righe di carrello
+
+
+IL FUNZIONAMENTO 
+
+
+Quando carichiamo la pagina di index
+abbiamo la lista dei prodotti che possiamo scegliere
+Quando lanciamo questo URL (quindi quello del catalogo)
+lanciamo il controller dello store.
+Questo perchè avviene?
+Perchè abbiamo precedentemente settato in routes.rb
+che il nostro root deve chiamare il controller 
+di store con l'action index
+
+root 'store#index' , as: 'store'
+
+Una volta che viene chiamato questo controller, con la relativa action index
+
+class StoreController < ApplicationController
+  def index
+		@products = Product.order(:title)
+  end
+end
+
+carichiamo nella variabile di istanza products tutti i prodotti che abbiamo salvato nel nostro DB
+Infine , viene chiamata la view di Store, che visualizza
+la variabile che abbiamo caricato dal controller dello store
+(Abbiamo chiamato a sua volta il model di Product per caricare i prodotti)
+
+Adesso stiamo visualizzando tutti i nostri prodotti.
+Cliccando su un pulsante Add to cart , chiamiamo il controller di line_items e gli passiamo
+un Hash con chiave product_id: e valore product  
+ 
+<%= button_to 'Add to Cart', line_items_path(product_id: product)%>
+
+il valore di product sarà l'id del prodotto che vogliamo aggiungere al carrello
+A questo punto , 
+
+Il metodo HTTP predefinito per un link è un GET, mentre quello per un pulsante è un POST
+Rails usa queste convenzioni per capire quale metodo chiamare del controller
+Dato che stiamo chiamando il controller di line_items con un pulsante, allora manderemo al
+suddetto controller un POST
+
+
+Dalla console Rails server , possiamo vedere cosa appare quando 
+clicchiamo il tasto Add to cart
+
+Started POST "/line_items?product_id=2" for 127.0.0.1"
+
+
+Se apriamo il controller line_items_controller.rb vediamo che il metodo create()
+si occupa di gestire le chiamate POST
+Andiamo a modificare il controller:
+
+Intanto , aggiungiamo il module CurrentCart al controller, perchè dobbiamo creare un carrello in caso non ne avessimo
+già uno. (includiamo il modulo per potere usare il metodo che abbiamo definito al suo interno, ovvero: 
+set_cart )
+
+Quindi , diciamo che quando questo controller viene chiamato, dobbiamo
+settare il carrello prima dell'azione di create.
+(Non ha senso creare una line_item senza un carrello giusto? :p )
+
+before_action :set_cart, only: [:create]
+
+Adesso abbiamo la sicurezza che il valore di @cart è stato settato/creato
+Come ultima modifica vado a modificare il metodo create del controller
+
+Aggiungo:
+
+product = Product.find(params[:product_id])
+Per prelevare il prodotto che ho aggiunto al carrello tramite Add to cart con l'id che ho passato al controller
+L'oggetto params preleva il parametro :product_id dalla richiesta nell' URL
+Una volta prelevato questo product , lo passiamo alla funzione:
+
+@cart.line_items.build(product: product)
+L'operazione comporta la creazione di una nuova relazione di riga d'ordine tra l'oggetto @cart e il product. Rails si occupa di stabilire le connessioni alle due estremita delle tabelle products e carts.
+
+
