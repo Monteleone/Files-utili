@@ -1,0 +1,17 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    FLASH    						           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Rails gestisce agevolmente gli errori e i relativi report grazie a una struttura chiamata flash.
+Un oggetto flash è una posizione (molto simile a un hash) in cui potere salvare quanto prodotto dall'elaborazione di una richiesta. Il contenuto di questo oggetto è disponibile per la richiesta successiva nella sessione, dopodichè viene eliminato automaticamente.
+In genere l'oggetto flash viene utilizzato per raccogliere i messaggi d'errore.
+Per esempio, quando il metodo show() rivela che gli è stato passato un ID di carrello non valido, puo' salvare il messaggio d'errore nell'area dell'oggetto flash e reindirizzare l'azione index() in modo da visualizzare nuovamente il catalogo.Si puo' accedere alle informazioni dell'oggetto flash all'interno delle viste tramite il metodo accessorio flash.
+
+Potevamo salvare l'errore in una variabile di istanza? NO!
+Perchè quando viene eseguita la redirect ad una altra pagina, il browser genera una nuova richiesta e tutte le variabili di istanza delle richieste precedenti sono perdute.
+
+I DATI DELL'OGGETTO FLASH VENGONO SALVATI NELLA SESSIONE PER RENDERLI DISPONIBILI TRA LE RICHIESTE.
+
+
+
