@@ -1,0 +1,90 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    BUTTON_TO						           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+BUTTON_TO è un HELPER!
+Rails mette a disposizione dei metodi speciali, chiamati helper, per facilitare la
+generazione del codice HTML 
+Parlo dell'helper button_to ma, in realtà , tratto anche dell'oggetto params
+Il passaggio di dati dalla vista al controller avviene per mezzo della variabile params, un hash che contiene tutti i parametri disponibili condivisi sia al controller che alla vista. 
+
+Quando eseguiamo una chiamata GET, i dati sono passati tramite Query String
+Una query string è tutto quello che viene dopo il carattere "?" in una URL
+Il contenuto della query string è una sequenza di coppie chiave-valore, che si presta bene a
+essere rappresentato tramite un hash Ruby
+
+
+GET (http://domain.com/url?param1=value1&param2=value2 
+
+Una chiamata GET come quella sopra setta l'hash params in questo modo:
+
+params[:param1] = value1
+params[:param2] = value2
+
+Una chiamata tramite POST memorizza automaticamente i valori in params
+
+"Rails does not make any distinction between query string parameters and POST parameters, and both are available in the params hash in your controller!!!"
+
+
+Prendiamo come caso di studio l'applicativo depot:
+
+
+In depot abbiamo un Controller chiamato LineItemsController di questo tipo:
+
+
+	# POST /line_items
+  # POST /line_items.json
+  def create
+    product = Product.find(params[:product_id])
+		@line_item = @cart.add_product(product.id)
+
+    respond_to do |format|
+      if @line_item.save
+        format.html { redirect_to @line_item.cart}
+        format.json { render :show, status: :created, location: @line_item }
+      else
+        format.html { render :new }
+        format.json { render json: @line_item.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
+Vediamo chiaramente che la funzione create , per caricare la variabile product necessita 
+del valore che l'hash params ritorna con la chiave :product_id
+(Potevamo usare qualsiasi chiave , abbiamo usato questa per leggibilità di codice)
+
+Quindi , quello che noi vogliamo è:
+
+id = params[:product_id]
+product = Product.find(id)
+
+(Detto in parole povere!)
+
+Come facciamo a passare questo id ,dalla nostra view al controller sopra nominato (LinesItemController)?
+Come abbiamo visto , lo facciamo tramite l'hash params!
+
+Nella nostra view dello store:
+
+<%= button_to 'Add to Cart', line_items_path(product_id: product)%>	
+
+
+button_to esegue una chiamata POST e manda al controller LinesItemsController (Tramite POST)
+il seguente dato:
+
+product_id: product
+
+Che è un hash! come dire:
+
+:product_id => product
+
+Dal lato del controller , il params preleva questi dati, e preleva l'id
+Potevamo anche scrivere :
+
+product_id: product.id
+
+ma Rails capisce ugualmente che deve prelevare l'id di product. Anche se noi non lo specifichiamo
+
+
+
+
