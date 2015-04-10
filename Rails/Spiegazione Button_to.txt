@@ -79,11 +79,9 @@ Che è un hash! come dire:
 :product_id => product
 
 Dal lato del controller , il params preleva questi dati, e preleva l'id
-Potevamo anche scrivere :
 
-product_id: product.id
-
-ma Rails capisce ugualmente che deve prelevare l'id di product. Anche se noi non lo specifichiamo
+  product = Product.find(params[:product_id])
+		@line_item = @cart.add_product(product.id)
 
 
 
