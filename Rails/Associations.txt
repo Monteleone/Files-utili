@@ -1,0 +1,21 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    Associations				           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Le association in rails vengono effettuate nel model grazie a delle parole chiave , quali:
+
+belongs_to
+has_one
+has_many
+
+
+Il metodo build viene attribuito al model quando settiamo un belongs_to, has_one,has_many
+E' importante sapere che la build crea un oggetto ma non è detto che lo salvi
+nel caso dell'association has_many , lo salva automaticamente
+nel caso di belongs_to e has_one non lo salva. Lo dobbiamo fare noi
+
+Leggere meglio il seguente link:
+
+
+http://guides.rubyonrails.org/association_basics.html
