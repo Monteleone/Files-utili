@@ -1,0 +1,40 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    Resource routing         		   :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+resources :photos
+
+creates seven different routes in your application, all mapping to the Photos controller:
+
+
+Resource routing allows you to quickly declare all of the common routes for a given resourceful controller. Instead of declaring separate routes for your index, show, new, edit, create, update and destroy actions, a resourceful route declares them in a single line of code.
+
+    new_controllername_path 	returns /controllername/new
+    edit_controllername_path 	returns /controllername/edit
+    controllername_path 			returns /controllername
+
+
+
+As with plural resources, the same helpers ending in _url will also include the host, port and path prefix.
+
+
+
+Path and URL Helpers
+
+Creating a resourceful route will also expose a number of helpers to the controllers in your application. In the case of resources :photos:
+
+    photos_path 				 							returns /photos
+    new_photo_path 			 							returns /photos/new
+    edit_photo_path(:id) 							returns /photos/:id/edit
+	 (for instance, edit_photo_path(10) returns /photos/10/edit)
+    photo_path(:id) 									returns /photos/:id 
+	 (for instance, photo_path(10) 			returns /photos/10)
+
+Each of these helpers has a corresponding _url helper (such as photos_url) which returns the same path prefixed with the current host, port and path prefix.
+
+
+
+
+
+
