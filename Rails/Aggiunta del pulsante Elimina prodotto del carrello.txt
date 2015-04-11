@@ -1,0 +1,102 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::				Aggiunta pulsante Elimina del carrello       :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Nel progetto depot non era presente il pulsante per eliminare i prodotti inseriti nel carrello
+L'ho aggiunto , facendo questo:
+
+
+Per prima cosa ho aggiunto un altro button_to (oltre quello che era gia' presente per svuotare
+il carrello).La difficolta' incontrata è stata quella di richiamare il controller
+di LineItem per cancellare un oggetto di tipo LineItem
+
+In pratica dobbiamo: Chiamare l'azione DELETE di LineItemsController
+
+L'helper che usiamo per creare il pulsante "Elimina" invia dati tramite POST
+Dobbiamo specificare il metodo che vogliamo chiamare (nel nostro caso DELETE) e l'oggetto al quale vogliamo applicare l'azione di cancellazione (il nostro item)
+Dato che il nostro oggetto item è di tipo LineItem , Rails andra' a chiamare il controller di LineItem.
+
+
+Quindi in carts/show mettiamo:
+
+<td class="item_price"><%= button_to 'Elimina', line_item_path(item.id) , method: :delete, data: {confirm: 'Sei sicuro?' } %></td>
+
+
+Dall'altra parte , in LineItemsController andremo a fare una piccola modifica nel motodo destroy:
+
+
+def destroy
+	
+		>id_carrello = @line_item.cart.id
+    @line_item.destroy
+    respond_to do |format|
+       >format.html { redirect_to cart_url(id_carrello), notice: 'Line item was successfully destroyed.' }
+      format.json { head :no_content }
+    end
+		....
+		....
+
+
+Ovvero, prima di eliminare l'item, andiamo a salvare l'id del carrello al quale appartiene l'item che dobbiamo elimiare.
+Poi, dopo averlo eliminato , eseguiamo una redirect al nostro carrello
+
+
+DOMANDA :
+
+con il button_to , passiamo il nostro oggetto item
+cosa succede nel metodo destroy?
+perche' , il nostro item diventa @line_item ?
+
+Dobbiamo andare a vedere il metodo 
+
+    def set_line_item
+      @line_item = LineItem.find(params[:id])
+    end
+
+che viene lanciato prima dei metodi : :show, :edit, :update, :destroy
+Come specificato all'inizio del controller di LineItems:
+
+	before_action :set_line_item, only: [:show, :edit, :update, :destroy]
+
+
+In pratica , il discorso è questo:
+Quando con il button_to mandiamo tramite post il nostro item, viene lanciata prima della destroy la set_line_item che preleva l'id dall'hash params
+L'id che preleva è quello della line item chiamata da noi item (item.id)
+la carica nella variabile di istanza @line_item e poi eseguira' la cancellazione
+
+
+COSA IMPORTANTE:
+
+Non capivo come fosse possibile che l'hash params del metodo:
+
+
+    def set_line_item
+      @line_item = LineItem.find(params[:id])
+    end
+
+del controller di LineItems prelevasse il valore della chiave :id, dato che io nella view 
+show del carrello passo:
+
+line_item_path(item.id)
+
+invece di:
+
+line_item_path(id: item.id)  
+
+Il discorso è questo: Rails , quando passa il valore al controller di LineItems , anche se specifichiamo solo item.id , lui lo salva nel params come chiave id: e valore item.id
+Possiamo costatare questo discorso vedendo nella console i parametri che Rails passa.
+In questo modo , nel metodo set_line_item il params[:id] puo' prelevare il giusto id dal simbolo :id 
+
+:)
+
+
+
+
+
+
+
+
+
+
+
