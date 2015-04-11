@@ -46,10 +46,12 @@ Rails determines the name of the partial to use by looking at the model name in 
 
 
 
+Il template parziale deve trovarsi di default nella stessa directory dell'oggetto prodotto.
+Inoltre , il parziale deve iniziare con un underscore '_'
 
 
-
-
+Nei parziali sono disponibili le variabili di istanza che condividono controller e view
+Un parziale puo' richiamare al suo interno un altro parziale!
 
 
 
