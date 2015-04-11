@@ -15,3 +15,58 @@ I DATI DELL'OGGETTO FLASH VENGONO SALVATI NELLA SESSIONE PER RENDERLI DISPONIBIL
 
 
 
+Quando vogliamo generare un messaggio per informare l'utente sull'esito di una azione
+abbiamo una cosa di questo tipo (per esempio) :
+
+
+	...
+  format.html { redirect_to @cart, notice: 'Cart was successfully created.' }
+	...
+
+
+Prestiamo attenzione a notice
+Questo è un metodo o piu' precisamente un Convenience accessor per flash[:notice]
+In parole povere è come se stessimo caricando nell'oggetto flash il nostro messaggio 'Cart was successfully created.'
+Non usiamo direttamente flash ma ci serviamo di notice (per fare la stessa cosa) per
+risparmiare sintassi.
+
+
+notice è un Convenience accessor. Dal codice vediamo che si comporta come un hash
+Vedendo l'implementazione capiamo meglio come funziona:
+
+
+def notice=(message)
+  self[:notice] = message
+end
+
+
+Nel file dove abbiamo fatto la redirect_to andremo a mettere questo codice:
+
+<% if notice %>
+<p id="notice"><%= notice %></p>
+<% end %>
+
+Ovvero se notice ha qualcosa al suo interno, definiamo l'id notice e lo eseguiamo.
+In questo modo vedremo il messaggio :  'Cart was successfully created.' nella pagina 
+del redirect.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
