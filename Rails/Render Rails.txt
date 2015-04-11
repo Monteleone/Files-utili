@@ -1,0 +1,64 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    Render                  		   :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+Di base , quando creiamo un controller abbiamo alcuni metodi senza comandi.
+Per esempio , possiamo avere in un generico controller la seguente action view:
+
+
+   # GET /carts/1
+   # GET /carts/1.json
+   def show
+   end
+
+
+Come vediamo non è presente NULLA nel metodo show
+Quindi , come è possibile che quando ci colleghiamo a localhost:3000/carts/show/1
+Siamo in grado di vedere il carrello con ID pari a 1?
+
+In pratica, Rails fara' AUTOMATICAMENTE il rendering della view  con il nome della action del controller che vogliamo richiamare
+
+(Rails will automatically look for the action_name.html.erb template in the controller's view path and render it.)
+
+
+Per cambiare il comportamento di base di rendering di Rails possiamo usare il metodo 
+render.
+Per esempio:
+
+
+def update
+  @book = Book.find(params[:id])
+  if @book.update(book_params)
+    redirect_to(@book)
+  else
+    render "edit"
+  end
+end
+
+Se l'update fallisce chiamiamo la view edit.html.erb 
+(Possiamo anche usare un simbolo , se lo preferiamo. Es: render :edit)
+
+Con il metodo render , inoltre , possiamo eseguire il rendering delle collections. Quando passiamo a render una collection, questo applica per ogni membro della collection un template parziale.
+
+render(@cart.line_items)
+
+Rails determines the name of the partial to use by looking at the model name in the collection. In fact, you can even create a heterogeneous collection and render it this way, and Rails will choose the proper partial for each member of the collection.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
