@@ -1,0 +1,17 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    MIGRATION						           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Le migration in Rails sono un valido strumento per apportare delle modifiche
+al nostro database
+
+
+Es:
+
+rails generate migration add_order_to_line_item order:references
+
+Aggiunge il campo "order" alla nostra tabella line_item
+
+
+Per applicare le migrazioni bisogna fare: rake db:migrate
