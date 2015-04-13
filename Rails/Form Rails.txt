@@ -1,0 +1,64 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    Form in Rails				           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+
+
+@order = Order.new
+
+
+L'azione new presenta agli utenti un form che li inviti a immettere una serie di informazioni nella tabella orders, e cioè il loro nome, l'indirizzo , l'indirizzo email e il tipo di pagamento. I campi del form sono collegati con gli attributi corrispondenti in un oggetto del modello Rails (nel nostro caso, con un oggetto di tipo Orders)
+
+L'azione new appena chiamata ci porta ad una view contenente un form vuoto.
+Il form è vuoto poichè Rails preleva gli attributi da immettere nel form dall'oggetto chiamante ( che nel nostro caso è vuoto)
+
+Il nostro form viene generato in HTML grazie all'helper form_for
+(che genere il codice HTML necessario , oltre a specificare il metodo da usare per l'invio della richiesta HTTP e la action da chiamare. Questo lo fa dietro le quinte questo helper)
+
+
+<%= form_for @article, url: {action: "create"}, html: {class: "nifty_form"} do |f| %>
+  <%= f.text_field :title %>
+  <%= f.text_area :body, size: "60x12" %>
+  <%= f.submit "Create" %>
+<% end %>
+
+
+L'helper form_for permette inoltre (come possiamo vedere nell'esempio sopra)
+di gestire un oggetto builder(la variabile f) 
+
+
+In form_for possono anche essere usati altri helpers. Per esempio:
+
+
+text_field
+text_area
+email_field
+select 
+
+
+Quando l'utente clicca il pulsante submit del form invia una richiesta GET all'azione create del controller degli ordini.
+
+L'azione è di default GET per permettere (rispettando il routing delle risorse) la chiamata al metodo create del controller.
+
+ Nell'azione create del controller degli ordini abbiamo:
+
+@order = Order.new(order_params)
+
+Dove order_params è una funzione. La seguente:
+
+def order_params
+      params.require(:order).permit(:name, :address, :email, :pay_type)
+    end
+
+
+params in un controller ci appare come un Hash , ma in realtà è una istanza di 
+ActionController::Parameters, che ci offre diversi metodi come per esempio require e permit.
+
+Il metodo require ci assicura che uno specifico parametro sia presente, e se non lo è,
+il metodo lancia una eccezione. Ritorna una istanza di ActionController::Parameters per la chiave che passiamo nel require.
+
+Il metodo permit ritorna una copia dei parametri , ma solo di quelli che hanno chiave e valori permessi. Solo i parametri che sono permessi sono passati nel model
+In pratica e' una whitelist.
+Avrebbe senso metterla nel model ma in realtà il posto giusto è nel controller , dove acquisisce maggiore valenza.
+
