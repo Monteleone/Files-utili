@@ -12,6 +12,16 @@ Es:
 rails generate migration add_order_to_line_item order:references
 
 Aggiunge il campo "order" alla nostra tabella line_item
+Quindi :
 
+rails generate migration add_xxx_to_yyy xxx:references
+Dice che LineItem appartiene a order
+Con references stiamo dicendo che il valore che stiamo aggiungendo alla tabella deve
+essere una chiave esterna
+
+belongs_to :order 
+
+Ovvero ha una chiave esterna per Order che è appunto order
+(notare l'uso del maiuscolo)
 
 Per applicare le migrazioni bisogna fare: rake db:migrate
