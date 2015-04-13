@@ -1,0 +1,16 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									CONCERNS                           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+Novità introdotta in Rails 4
+
+L'idea è quella di estrarre le parti di codice comuni tra i diversi model e di posizionarle
+in una posizione comune a tutti.
+Ricordiamoci : DRY , Don't Repeat Yourself!
+
+Per fare cio' , è necessario creare un nuovo file nella cartella concerns (del model o del controller) per permettere di condividere il codice (rispettivamente tra model e controller)
+
+il nostro codice deve essere inserito in un model che estende ActiveSupport::Concern
+
+module CurrentCart
+	extend ActiveSupport::Concern
