@@ -7,6 +7,9 @@ Rails mette a disposizione dei metodi speciali, chiamati helper, per facilitare 
 generazione del codice HTML 
 Parlo dell'helper button_to ma, in realtà , tratto anche dell'oggetto params
 Il passaggio di dati dalla vista al controller avviene per mezzo della variabile params, un hash che contiene tutti i parametri disponibili condivisi sia al controller che alla vista. 
+params in un controller ci appare come un Hash , ma in realtà è una istanza di 
+ActionController::Parameters, che ci offre diversi metodi.
+
 
 Quando eseguiamo una chiamata GET, i dati sono passati tramite Query String
 Una query string è tutto quello che viene dopo il carattere "?" in una URL
