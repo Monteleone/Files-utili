@@ -62,3 +62,14 @@ Il metodo permit ritorna una copia dei parametri , ma solo di quelli che hanno c
 In pratica e' una whitelist.
 Avrebbe senso metterla nel model ma in realtà il posto giusto è nel controller , dove acquisisce maggiore valenza.
 
+
+Volendo essere piu' precisi, il metodo permit ritorna un Hash che contiene solo le chiavi permesse e (importante!) risponderà con true al metodo permitted?
+Di default, una istanza di ActionController::Parameters ritornerà false per permitted? 
+Rispendere true a permitted? significa che il parametro puo' essere usato.
+In caso negativo l'applicazione lancerà un ForbiddenAttributes error
+
+
+
+
+
+
