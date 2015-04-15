@@ -38,3 +38,12 @@ Each of these helpers has a corresponding _url helper (such as photos_url) which
 
 
 
+
+
+redirect_to @article:
+
+
+Conversely, as Rails is object / resource orientated, every method / function you run is based around resources, so this is just an extension of this idea.
+When you use the likes of redirect_to or render with an object, Rails can take the object & pull down the corresponding routes for it.
+
+Basically, if you have an @article object, Rails will observe that it's built from the Article model, and will consequently look for the Articles controller & the show method, to show a single resource on the page.
