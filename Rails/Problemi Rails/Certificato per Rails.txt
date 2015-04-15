@@ -1,0 +1,22 @@
+
+
+It's specific to a windows permission issue, you can read the entire scope of the issue here
+
+For the tl;dr -
+
+Step 1: Obtain the new trust certificate
+
+Download: AddTrustExternalCARoot-2048.pem
+
+Step 2: Locate RubyGems certificate directory in your installation
+
+C:\>gem which rubygems
+C:/Ruby21/lib/ruby/2.1.0/rubygems.rb
+
+We want to open the path listed above:
+
+C:\>start C:\Ruby21\lib\ruby\2.1.0\rubygems
+
+Step 3: Copy new trust certificate
+
+Now, locate ssl_certs directory and copy the .pem file we obtained from step 1 inside.

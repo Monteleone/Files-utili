@@ -1,0 +1,15 @@
+ho installato rubystack e mi dava il seguente errore quando facevo
+rails new nomeapp:
+
+
+Unable to download data from https://rubygems.org/ - SSL_connect returned=1 errno=0 state=SSLv3 read server certificate B: certificate verify failed
+
+quindi ho scaricato l'ultima verisone delle gemme
+
+
+
+rubygems-2.4.5
+
+e da console ho installato il file ruby setup.rb
+
+tutto poi ha funzionato. BOH!
