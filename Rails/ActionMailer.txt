@@ -81,6 +81,14 @@ Voglio spiegare il comando del secondo metodo:
 
 
 
+L'opzione :partial    permette di richiamare un template parziale
+L'opzione :collection permette di passare al parziale una collezione
+L'opzione :as  				permette di usare , come nome di variabile locale , il nome specificato (:line_item) 
+											che ovviamente è richiamato nel template parziale 	
+
+
+
+
 
 
 
