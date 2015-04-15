@@ -1,0 +1,12 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    Login                          :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+
+Per prima cosa abbiamo generato , tramite scaffolding , l' User
+Mettiamo il digest nella password per fare in modo che se il database dovesse essere compromesso allora le password
+non sarebbero rivelate.
+
+
+
