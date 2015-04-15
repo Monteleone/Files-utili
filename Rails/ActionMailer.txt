@@ -1,0 +1,88 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    ActionMailer				           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Per configurare l' email in Rails , bisogna eseguire alcune modifiche.
+La configurazione della email fa parte dell'ambiente di una applicazione Rails e implica un blocco
+
+ApplicationName::Application.configure
+
+Se volete utilizzare la stessa configurazione per lo sviluppo , i test e la produzione, inseritela in environment.rb nella directory config; altrimenti , aggiungete le diverse configurazioni in file opportuni nella cartella config/environments.
+
+(NB: Ho eseguito le modifiche in config/environments.rb ma NON venivano prese in considerazione! Poi , le ho messe in config/environments/development.rb e tutto andava bene.)
+
+La parte di codice da inserire è la seguente:
+
+
+Depot::Application.configure do
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+  	address: "smtp.gmail.com",
+  	port: "587",
+  	domain: "baci.lindsaar.net",
+  	authentication: "plain",
+  	user_name: "pasticceriasiciliana91@gmail.com",
+  	password: "siciliana",
+  	enable_starttls_auto: true
+  }
+end
+
+
+Dove settiamo una configurazione smtp di un server di posta gmail.
+
+E' opportuno abilitare (sempre in config/environments/development.rb) la stringa per la visualizzazione degli errori.
+In modo da verificare eventuali possibili errori.
+
+
+  # Don't care if the mailer can't send.
+  config.action_mailer.raise_delivery_errors = true
+
+
+Bisogna metterla a true, poichè , di default è messa a false e quindi non ci mostra eventuali errori.
+(e non siamo in grado di fare debugging)
+
+Una atra cosa IMPORTANTISSIMA è di abilitare , dal proprio account di posta gmail (se ovviamente si sta usando gmail),
+l'accesso da parte di applicazioni terze. Senza abilitare questo , Rails non consegnera' la mail, perchè gmail la blocca.
+(Mi ha fatto impazzire sta roba)
+
+Una altra cosa da tenere a mente è la seguente:
+
+Quando in una mail che dobbiamo inviare, si fa riferimento a un template parziale con dei pulsanti (o comunque con qualcosa che non avrebbe senso da mettere in una mail) Rails restituisce un errore.
+Bisogna quindi togliere questi oggetti particolari dal template, prima di inviare la email.
+A questo proposito ci sono diverse strategie:
+
+1) Non considerare i button_to quando stiamo mandando la email
+Es:  in _line_item.html.erb
+
+ <% if @order.nil? %> <td><%= button_to “Decrease”, line_item, :remote => true, :method => :delete, :confirm => “Are you sure?” %></td> <% end %>
+
+
+2) Usare un altro template :
+
+
+<%= render :partial => 'line_items/line_item_simple', :collection => @order.line_items, :as => :line_item %> 
+
+
+
+Io ho usato il secondo metodo!
+il render che vediamo viene , ovviamente , messo nel file 
+
+C:\Bitnami\depot\app\views\order_notifier\receiver.html 
+
+Per elencare gli item che abbiamo messo nel nostro ordine!
+
+
+Voglio spiegare il comando del secondo metodo:
+
+
+
+<%= render :partial => 'line_items/line_item_simple', :collection => @order.line_items, :as => :line_item %> 
+
+
+
+
+
+
+
+
