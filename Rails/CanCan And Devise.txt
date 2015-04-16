@@ -1,0 +1,157 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									CANCAN e DEVISE                    :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+Per installare Devise seguite il file:
+
+Adding Authentication with Devise - Rails Girls.pdf
+
+Per installare cancan seguite il file:
+
+Documentation for cancan (1.6.10).htm
+
+
+__________________________________________________________________________________________________________________
+ATTENZIONE!
+
+A quanto pare la versione di cancan 1.6.10 non si integra bene con Rails 4 
+e quindi ci possono essere dei problemi nel richiamare dei controller.
+L'errore in questione è il seguente:
+
+ActiveModel::ForbiddenAttributesError when creating new user
+
+(o qualcosa di simile)
+
+Questo è dovuto al fatto che cancan non gestisce gli strong parameters di Rails 4
+
+Strong Parameters:
+Gli Strong Parameters provvedono a dare una interfaccia per proteggere gli attributi che un utente sta assegnando.
+Per capirci:
+
+ def person_params
+      params.require(:person).permit(:name, :age)
+ end
+
+(La whitelist di parametri permessi. Ho gia' trattato l'argomento nel file: Form Rails.txt )
+
+Comunque , per ovviare a questo problema bisogna inserire il seguente workaround nell' ApplicationController:
+
+
+before_filter do
+  resource = controller_name.singularize.to_sym
+  method = "#{resource}_params"
+  params[resource] &&= send(method) if respond_to?(method, true)
+end
+
+E tutto dovrebbe funzionare nuovamente.
+Bisogna aspettare che cancan risolva il bug.
+__________________________________________________________________________________________________________________
+
+
+Funzionamento di CanCan:
+
+
+Cancan ha bisogno di devise per funzionare.
+In realtà, puo' funzionare con altre gemme o anche senza , pero' , bisogna ricordare di implementare il metodo current_user.
+CanCan usa il metodo current_ability per gestire le ability, e per fare cio' si serve di current_user
+Devise immette automaticamente questo metodo e per questo , Devise e Cancan , lavorano bene insieme.
+
+def current_ability
+  @current_ability ||= ::Ability.new(current_user)
+end
+
+Come vediamo usa il current_user.
+
+CanCan dobbiamo creauna nuova classe chiamata Ability, che mette nella cartella /app/models. La classe include il module CanCan::Ability oltre che un metodo initialize che prende un oggetto user come parametro. E’ proprio in questo metodo che definiamo i diritti per ogni tipo di utente.
+
+    class Ability  
+      include CanCan::Ability  
+      
+      def initialize(user)  
+      
+      end  
+    end 
+ 
+I diritti sono definiti attraverso il metodo a tre lettere (can) che è il cuore di CanCan.
+Questo metodo accetta due parametri: il primo è la action che vogliamo eseguire ed il secondo è la classe di modello a cui si applica la action. In alternativa, per applicare una action a tutti i modelli, possiamo passare :all. Se vogliamo che tutti gli utenti possano solamente leggere tutti i modelli.
+
+In cima al controller che vogliamo proteggere, possiamo invocare la load_and_authorize_resource, che caricherà e autorizzerà l’opportuna risorsa in una before filter.
+Ora che la nostra applicazione è sicura, possiamo cominciare a definire i diritti che ciascun ruolo comporta. Ciò viene fatto ritornando alla classe Ability che abbiamo creato prima. I diritti che definiamo nel metodo initialize verranno riflessi su tutta la nostra applicazione.Passiamo l’utente corrente al metodo initialize, in modo tale da poter cambiare i diritti a seconda di chi sia l’utente autenticato correntemente.L’utente passato al metodo initialize può essere un oggetto di qualsiasi tipo, in quanto l’autenticazione è completamente disaccoppiata dall’autorizzazione.
+
+
+Nell' ApplicationController, per gestire gli errori di accesso non consentito, mettiamo:
+
+	#se non hai il permesso non passi
+	rescue_from CanCan::AccessDenied do |exception|
+  	redirect_to store_url, notice: "Accesso non consentito!"
+	end
+
+
+Nella classe Ability vediamo che è presente una variabile: user
+Cosa contiene questa variabile dipende dalla gemma cancan. La gemma legge dall'helper current_user e instanzia 
+la variabile user. Se non ci sono utenti loggati:
+
+user ||= User.new
+
+Che equivale a dire:
+
+a ||= b
+
+is equivalent to
+
+a || a = b
+
+
+La variabile user che vediamo passata nel metodo initialize è il risultato dell'helper current_user
+Che viene fornito da Devise (è un suo helper che restituisce l'utente loggato)
+Ricordiamo che cancan gestisce l'autorizzazione e non l'autenticazione.
+Potremmo anche creare il nostro metodo current_user che ritorni l'utente loggato.
+
+In your controllers you want to check for abilities. Ok. So you go with:
+
+authorize! :index, @user
+
+And this will be converted in something like
+
+verify if current_user can :index @user #pseudo-code
+
+When you change it to:
+
+authorize! :index, current_user
+
+It's the equivalent of
+
+verify if current_user can :index current_user #pseudo-code
+
+
+
+
+
+
+
+
+
+
+In Devise, invece, vediamo:
+
+
+/app/models/user.rb
+
+class User < ActiveRecord::Base
+  # Include default devise modules. Others available are:
+  # :token_authenticatable, :lockable, :timeoutable and :activatable
+  # :confirmable,
+  devise :database_authenticatable, :registerable, 
+         :recoverable, :rememberable, :trackable, :validatable
+end
+
+
+Il modulo :validatable gestisce le validazioni dell’email e della password in fase di registrazione. Se vogliamo cambiare quel comportamento, possiamo rimuovere quel modulo e gestire da noi la validazione. I valori di default nel modulo validatable sono validi per la maggior parte degli intenti, per cui per ora li lasceremo come sono.
+
+
+
+
+
+
+
+
