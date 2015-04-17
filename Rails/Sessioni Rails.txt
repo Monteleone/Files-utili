@@ -3,6 +3,56 @@
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
+INTRODUZIONE:
+__________________
+Cosa è la Sessione?
+
+La Sessione rappresenta lo stato associato ad una sequenza di pagine visualizzate
+da un utente. Prendiamo come esempio la conversazione per acquistare un prodotto.
+NB: Per conversazione si intende una sequenza di pagine di senso compiuto
+
+
+•l’utente inserisce username e password:Il server ottiene i dati e li
+verifica con i dati presenti nel database dei registrati: viene creata la sessione.
+
+•Utente è autorizzato, sfoglia il catalogo alla
+ricerca di un prodotto; il server lo riconosce
+attraverso i dati di sessione
+
+•Trova il prodotto e lo mette nel
+carrello: la sua sessione viene
+aggiornata con le informazioni del
+prodotto
+
+•Compila i dati di consegna
+
+•Provvede al pagamento, fine
+della conversazione di acquisto
+
+•La sessione è ancora attiva e l’utente può
+fare una altro acquisto o uscire dal sito
+
+
+La Sessione ha quindi i seguenti requisiti:
+• Deve essere condivisa dal Client e dal Server
+• È associata ad una o più conversazioni effettuate da un singolo utente
+• Ogni utente possiede la sua singola sessione
+
+
+Ci sono due tecniche di base per gestire la sessione:
+1. Utilizzo della struttura dei cookie
+2. Gestione di uno stato sul server per ogni utente collegato
+• I cookie fanno parte dello standard http, sono quindi sempre disponibili
+• La gestione dello stato sul server è possibile in alcune architetture specifiche
+
+
+I cookie possono essere generati sia dal client che dal server, dopo la loro
+creazione vengono sempre passati ad ogni trasmissione di request e response.
+
+
+SESSIONE IN RAILS:
+__________________
+
 Rails permette di gestire le informazioni a livello di sessione tramite un hash che persiste da una
 richiesta all'altra e può contenere qualsiasi oggetto serializzabile.
 Esempio: uso un hash session per trovare l'ID dell'utente senza dover passare per il database.
