@@ -3,6 +3,8 @@
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
+According to APIdock : ActionController/Flash, it is stored in a session.
+
 Rails gestisce agevolmente gli errori e i relativi report grazie a una struttura chiamata flash.
 Un oggetto flash è una posizione (molto simile a un hash) in cui potere salvare quanto prodotto dall'elaborazione di una richiesta. Il contenuto di questo oggetto è disponibile per la richiesta successiva nella sessione, dopodichè viene eliminato automaticamente.
 In genere l'oggetto flash viene utilizzato per raccogliere i messaggi d'errore.

@@ -1,0 +1,29 @@
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::::									    Devise  						           :::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Da leggere
+
+When you customize your own views, you may end up adding new attributes to forms. Rails 4 moved the parameter sanitization from the model to the controller, causing Devise to handle this concern at the controller as well.
+Controller filters and helpers
+
+Devise will create some helpers to use inside your controllers and views. To set up a controller with user authentication, just add this before_action (assuming your devise model is 'User'):
+
+before_action :authenticate_user!
+
+If your devise model is something other than User, replace "_user" with "_yourmodel". The same logic applies to the instructions below.
+
+To verify if a user is signed in, use the following helper:
+
+user_signed_in?
+
+For the current signed-in user, this helper is available:
+
+current_user
+
+You can access the session for this scope:
+
+user_session
+
+After signing in a user, confirming the account or updating the password, Devise will look for a scoped root path to redirect to. For instance, when using a :user resource, the user_root_path will be used if it exists; otherwise, the default root_path will be used. 

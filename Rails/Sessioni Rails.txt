@@ -59,7 +59,7 @@ Esempio: uso un hash session per trovare l'ID dell'utente senza dover passare pe
 Come abbiamo visto, Rails predilige l'uso di boilerplate code (convenction over configuration) 
 
 La gestione della sessione è uno di quei compiti che affliggono moltissimo gli sviluppatori.
-Rails usa un CookieStore come gestore di sessioni.
+Rails usa di default un CookieStore come gestore di sessioni.
 Questo significa che tutte le informazioni di cui abbiamo bisogno sulla sessione di un utente , sono 
 mandate al client e NIENTE viene salvato sul server.
 Quando un utente manda una richiesta, i cookie di sessione sono processati e validati, in questo modo, Rails è in grado di identificare correttamente l'utente dal database. 
@@ -74,6 +74,61 @@ cookie = {
   "_csrf_token": "token",
   "user_id": "1"
 }
+
+
+Rails separa il concetto di sessione da quello delle specifiche di come l'informazione di sessione e' memorizzato.
+La sessione, come visto fino ad ora, è un concetto astratto con il quale interagiamo indipendentemente da dove 
+è salvato. Le diverse metodologie di sessioni disponibili sono:
+
+
+   CookieStore
+   CacheStore
+   ActiveRecordStore  (usa una tabella dove salva i dati di sessione. Client e server si scambiano l'ID di sessione)
+
+
+Vediamo un poco piu' da vicino il CookieStore:
+
+Come detto Rails deve usare i cookies per gestire la conversazione tra client e server. Non importa quale sistema di store session sia usato. Avremo comunque sempre bisogno di usare i cookie , per la natura stessa del protocollo HTTP (stateless 'senza stato').
+
+Che misure prende Rails per tenere sicuri i cookie? In Rails 4 i cookie vengono crittati , invece in Rails 3 venivano solamente codificati in Base64.
+ 
+Base64 was created to transport data; not protect it.
+
+In Rails 4 i cookie possono essere letti solo dal server, che è in grado di decrittarli.
+Inoltre, per evitare che qualcuno possa manomettere il cookie , Rails introduce una firma (SHA  produce un message digest, o "impronta del messaggio", di lunghezza fissa partendo da un messaggio di lunghezza variabile.)
+La firma viene inserita alla fine del cookie.
+
+Quando il server riceve il cookie, prende la parte di dati prima della firma e la decodifica.
+Il server ricrea la firma usando la stessa chiave segrata usata per generare la firma originale.
+Se le due firme concidono il cookie non è stato manomesso. Se è stato manomesso , la sessione viene cancellata.
+
+La chiave segreta è disponibile SOLO nel server. E' una chiave di 128 caratteri generata randomicamente. Ovviamente bisogna stare molto attenti nel proteggere questa chiave.
+In Rails 4.1 it’s secret_key_base in config/secrets.yml
+
+
+Potremmo chiederci quale è la differenza tra il semplice cookie e la sessione.
+Vediamo questo esempio:
+
+cookie[:foo] = 'bar'
+
+session[:foo] = 'bar'
+
+Inizialmente potrebbero sembrare identici , ma in realta' ci sono delle considerazioni da fare.
+I cookie viaggiano in chiaro mentre i cookie della session sono (come visto prima) crittati , firmati e serializzati.
+Quindi usiamo i cookie per mandare informazioni pochi importanti e la session per mandare informazioni sensibili (ID dell'utente)
+Inoltre i cookie della session vengono cancellati dopo il logout o la chiusura del browser
+
+
+I've got this in my config/environment.rb
+
+  config.action_controller.session = {
+    :session_key => [some key],
+    :secret => [some secret]
+  }
+
+If you have secret_key_base set, your cookies will be encrypted.
+If you have both secret_token and secret_key base set, your cookies will be encrypted, and signed cookies
+
 
 Una sessione normalmente consiste in un hash di valori e session id.
 Ogni cookie mandato al client include la sessione dell'id.
