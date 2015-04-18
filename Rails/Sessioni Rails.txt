@@ -92,3 +92,20 @@ ho preso l'id del carrello appena creato e l'ho salvato nella sessione (nel hash
 
 session[:cart_id] = @cart.id
 
+
+
+
+
+
+A session cookie is signed and encrypted (encryption is new in Rails 4) then sent to the browser.
+
+
+
+
+
+
+
+
+
+
+
