@@ -128,6 +128,10 @@ After signing in a user, confirming the account or updating the password, Devise
 COME FUNZIONA IL SESSION
 ______________________________
 
+Quando un utente si collega per la prima volta al server , gli viene restituito un cookie 
+Dopo che avrà effettuato il log in 
+
+
 >> app.session
 {
  "_csrf_token"=>"dT0/BqgLb84bnE+f1g...",
