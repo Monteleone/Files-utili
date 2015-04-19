@@ -3,7 +3,77 @@
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-Da leggere
+Da leggere in accopiata di Sessioni Rails.txt
+
+
+
+
+Background
+
+Devise is built on top of a library called Warden. Warden is a low-level authentication library for Rack and works as a piece of middleware in the stack. Warden provides the basis for Strategies by implementing a Base strategy from which others must inherit.
+
+Devise actually declares 2 strategies Authenticatable and DatabaseAuthenticatable of which you can choose :database_authenticatable. Authenticatable inherits from Wardens Base Strategy and DatabaseAuthenticatable inherits from Authenticatable.
+
+
+
+
+
+Devise è modulare e al momento è formato da undici moduli, ciascuno dei quali fornisce un aspetto differente di autenticazione. Per esempio uno dei moduli, Rememberable, si ricorda l’autenticazione dell’utente memorizzata in un cookie mentre un’altra, Recoverable, si occupa di resettare la password dell’utente e di mandare le istruzioni per il reset via email. Questo approccio rende semplice la scelta di quali parti dell’autenticazione si vogliono usare (e quali no) all’interno della propria applicazione.
+
+Il primo è di settare l’opzione host per il mailer di applicazione, mentre il secondo indica che che è necessario aver specificato l’instradamento di root
+
+
+/config/environments/development.rb
+
+config.action_mailer.default_url_options = { :host => 'localhost:3000' }
+
+
+Devise permette di generare model. Noi lo useremo per generare quello degli User.
+Non è necessario crearlo tramite Devise, possiamo farlo anche a mano (tramite scaffold) ma Devise
+setta alcune cose per noi in automatico. Per esempio:
+
+un file di modello, una migration e un instradamento devise_for.
+
+Il modello User è grossomodo simile ad ogni altro modello ActiveRecord, ma ha in particolare una chiamata al metodo devise, ed è, qui che la magia dell’autenticazione avviene. Il metodo devise accetta come argumenti una lista di moduli che vogliamo supportare nella nostra applicazione: fra questi dovreste riconoscere :rememberable e :recoverable dal momento che li abbiamo citati poco fa. Possiamo facilemente aggiungere o rimuovere moduli da questa lista per personalizzare l’autenticazione di devise per la necessità della nostra applicazione. A questo scopo abbiamo rimosso :confirmable perchè non vogliamo che gli utenti debbano confermare la loro iscrizione via email.
+
+
+Ricordiamo che creare un model vuol dire andare a mettere una tabella nel nostro DB
+La migration che Devise genera permette di potere modificare il modello di default che Devise ha fatto per noi.
+Per esempio , vogliamo introdurre un nuovo attributo? (Come del resto ho fatto per inserire la colonna "admin")
+Andiamo a modificare la migration e poi la applichiamo.
+
+rake db:migrate e lo applichiamo
+
+
+Infine abbiamo il route devise_for che è stato aggiunto al file degli instradamenti per noi. Se lanciamo rake routes, possiamo vedere gli instradamenti che questa linea di codice crea:
+
+
+devise_for :users
+
+
+Anche se è un po’ difficile da leggere, possiamo vedere che ci sono molti instradamenti di autenticazione inclusi per il sign-in e il sign-out, il reset delle password, l’autenticazione come nuovo utente ed il reset di un profilo. Questi instradamenti sono tutti personalizzabili se volessimo cambiarli.
+Comunque la cosa importante è che vediamo che viene richiamato un controller chiamato session quando logghiamo, slogghiamo etc etc.
+Il controller lo genera Devise per noi.
+
+
+
+Possiamo ora accedere al nostro meccanismo di autenticazione mediante questi route. Se andiamo all’URL /users/sign_up vediamo la form di autenticazione come nuovo utente.
+
+
+
+user_signed_in?, che viene fornito da devise e che restituisce true se l’utente corrente è autenticato.
+Possiamo mostrare l’indirizzo email chiamando current_user per avere un riferimento all’oggetto User dell’utente corrente e mostrarne la proprietà email. 
+
+
+Se si volesse cambiare il comportamento di Devise , per esempio per creare un nuovo utente, non conviene andare
+a modificare la gemma. Conviene , invece , creare un controller (facendolo ereditare da Devise::SessionsController ) e con un override scrivere il proprio comportamento. 
+
+es:
+class SessionsController < Devise::SessionsController
+
+Cosi creiamo il nostro SessionController personale.
+
+
 
 When you customize your own views, you may end up adding new attributes to forms. Rails 4 moved the parameter sanitization from the model to the controller, causing Devise to handle this concern at the controller as well.
 Controller filters and helpers

@@ -50,6 +50,100 @@ I cookie possono essere generati sia dal client che dal server, dopo la loro
 creazione vengono sempre passati ad ogni trasmissione di request e response.
 
 
+RACK, IL MIDDLEWARE DI RAILS
+____________________________
+
+
+Cominciamo col dire che Rails si basa su Rack
+Rack è un middleware che fa molto di piu' di "filtrare una richiesta e una risposta". E' l' implementazione di un pipeline design pattern per web server.
+
+Che vuil dire "pipeline design pattern" ?
+
+Semplicemente che una richiesta passa tramite determinate "parti" di una pipeline. Venendo , in questo modo,
+filtrata e modellata.
+Queste "parti" si occupano di:
+
+
+*Authentication: when the request arrives, are the users logon details correct? How do I validate this OAuth, HTTP 									 Basic Authentication, name/password?
+
+*Authorisation: "is the user authorised to perform this particular task?", i.e. role-based security.
+
+*Caching: have I processed this request already, can I return a cached result?
+
+*Decoration: how can I enhance the request to make downstream processing better?
+
+*Performance & Usage Monitoring: what stats can I get from the request and response?
+
+*Execution: actually handle the request and provide a response.
+
+
+Cominciamo col parlare delle basi di una comunicazione browser/server.
+Abbiamo sviluppato una applicazione con Rails e abbiamo la nostra pagina in http://localhost:3000/users
+Questo mostra tutti gli utenti che abbiamo nel DB.
+La richiesta "/users" arriva al nostro server Rails e chiede di vedere tutti gli utenti
+
+Dietro le scene , questa è una richiesta HTTP che il browser invia e risulta essere qualcosa di questo tipo:
+
+
+// Request by the browser
+
+GET /users HTTP/1.1
+Host: localhost
+Connection: close
+
+And, the response sent by the server looks like:
+
+// Response by the server
+
+HTTP/1.1 200 OK
+Content-Length: 25
+Content-Type: text/html
+<html>
+...
+</html>
+
+
+Adesso , noi siamo un Web Server con sopra una applicazione Rails. Il browser ci richiede una certa pagina (quella degli users per esempio). Come server , noi siamo in grado di capire una richiesta HTTP. Il problema è che non 
+sappiamo cosa farcene di una richiesta del genere. Dobbiamo , infatti , farla arrivare alla nostra applicazione Rails, perche' è lei che è in grado di elaborarla (mostrandoci gli utenti)
+Il problema sta proprio qua. La nostra app in Rails non capisce le richieste HTTP. Dobbiamo , percio' , convertirle in un linguaggio capibile a Rails, con il quale ci possa lavorare senza problemi (in Ruby).
+Chi fa questo lavoro di "conversione" è un middleware (che sta a metà tra HTTP e Rails) chiamato Rack.
+Detto in parole piu' semplici: 
+
+Rack converte una richiesta HTTP in un Hash Ruby.
+
+env = {
+  'REQUEST_METHOD' => 'GET',
+  'PATH_INFO' => '/users',
+  'HTTP_VERSION' => '1.1',
+  'HTTP_HOST' => 'localhost',
+  ...
+  ...
+}
+
+La variabile env è inviata alla app
+Rails elabora un risposta che sara' nuovamente convertita da Rack in HTTP (perchè i browser capiscono HTTP)
+
+// Rails app to server
+
+[
+  200,
+  {
+    'Content-Length' => '25',
+    'Content-Type' => 'text/html'
+  },
+  [
+    '<html>',
+    '...',
+    '</html>'
+  ]
+]
+
+
+E' lui che si occupa di gestire i cookie e le sessioni (siamo al basso livello)
+
+
+
+
 SESSIONE IN RAILS:
 __________________
 
@@ -148,13 +242,55 @@ ho preso l'id del carrello appena creato e l'ho salvato nella sessione (nel hash
 session[:cart_id] = @cart.id
 
 
-
-
-
-
 A session cookie is signed and encrypted (encryption is new in Rails 4) then sent to the browser.
 
 
+PERCHE' HO UNA MENTE MALATA:
+Come salvo le sessioni in Rack:
+________________________________
+
+
+Cercando in rete , tra i vari github degli sviluppatori, sono riuscito a trovare nella implementazione di Rack
+la parte incriminata che si occupa di gestire le sessioni:
+
+
+https://github.com/rack/rack/blob/master/lib/rack/session/cookie.rb#L153
+
+
+ rack/lib/rack/session/cookie.rb
+
+
+def get_session(env, sid)
+        data = unpacked_cookie_data(env)
+        data = persistent_session_id!(data)
+        [data["session_id"], data]
+      end
+
+      def extract_session_id(env)
+        unpacked_cookie_data(env)["session_id"]
+      end
+
+      def unpacked_cookie_data(env)
+        env["rack.session.unpacked_cookie_data"] ||= begin
+          request = Rack::Request.new(env)
+          session_data = request.cookies[@key]
+
+          if @secrets.size > 0 && session_data
+            digest, session_data = session_data.reverse.split("--", 2)
+            digest.reverse! if digest
+            session_data.reverse! if session_data
+            session_data = nil unless digest_match?(session_data, digest)
+          end
+
+          coder.decode(session_data) || {}
+        end
+      end
+
+		....
+		....
+
+
+Vediamo effettivamente che prende la variabile 'env' , spiegata all'inizio di questa pagina :D
 
 
 
