@@ -3,7 +3,7 @@
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-Da leggere in accopiata di Sessioni Rails.txt
+Da leggere in accoppiata di Sessioni Rails.txt
 
 
 
@@ -11,60 +11,49 @@ BACKGROUND
 ____________________
 
 
-Devise è costruito sopra una libreria chiamata Warden (trad: Guardiano! che figata!)
-Warden è una libreria per l'autenticazione di basso livello ed è il middleware che fa comunicare Rails con 
-le richieste HTTP e che tramuta le risposte Rails in risposte HTTP per il browser del client.
+Devise è costruito sopra una libreria chiamata Warden (trad: Guardiano)
+Warden è una libreria per l'autenticazione di basso livello.
+Warden comunica con Rack , il middleware che si adopera per fare comunicare HTTP e Rails.
 
 (Leggere Warden nel file Sessioni Rails.txt)
 
 
-Devise è modulare e al momento è formato da undici moduli, ciascuno dei quali fornisce un aspetto differente di autenticazione. Per esempio uno dei moduli, Rememberable, si ricorda l’autenticazione dell’utente memorizzata in un cookie mentre un’altra, Recoverable, si occupa di resettare la password dell’utente e di mandare le istruzioni per il reset via email. Questo approccio rende semplice la scelta di quali parti dell’autenticazione si vogliono usare (e quali no) all’interno della propria applicazione.
+Devise è una libreria modulare e al momento è formato da undici moduli, ciascuno dei quali fornisce un aspetto differente di autenticazione. Per esempio uno dei moduli, Rememberable, si ricorda l’autenticazione dell’utente memorizzata in un cookie mentre un’altra, Recoverable, si occupa di resettare la password dell’utente e di mandare le istruzioni per il reset via email. Questo approccio rende semplice la scelta di quali parti dell’autenticazione si vogliono usare (e quali no) all’interno della propria applicazione.
+
+Per installare Devise bisgna svolgere alcune azioni specifiche:
 
 Il primo è di settare l’opzione host per il mailer di applicazione, mentre il secondo indica che che è necessario aver specificato l’instradamento di root
-
 
 /config/environments/development.rb
 
 config.action_mailer.default_url_options = { :host => 'localhost:3000' }
 
 
-Devise permette di generare model. Noi lo useremo per generare quello degli User.
-Non è necessario crearlo tramite Devise, possiamo farlo anche a mano (tramite scaffold) ma Devise
-setta alcune cose per noi in automatico. Per esempio:
+Devise permette di generare models. Noi lo useremo per generare quello degli User.
+Non è necessario crearlo tramite Devise, possiamo farlo anche a mano (tramite scaffold), ma Devise
+setta alcune cose per noi in automatico. Setta:
 
 un file di modello, una migration e un instradamento devise_for.
 
 Il modello User è grossomodo simile ad ogni altro modello ActiveRecord, ma ha in particolare una chiamata al metodo devise, ed è, qui che la magia dell’autenticazione avviene. Il metodo devise accetta come argumenti una lista di moduli che vogliamo supportare nella nostra applicazione: fra questi dovreste riconoscere :rememberable e :recoverable dal momento che li abbiamo citati poco fa. Possiamo facilemente aggiungere o rimuovere moduli da questa lista per personalizzare l’autenticazione di devise per la necessità della nostra applicazione. A questo scopo abbiamo rimosso :confirmable perchè non vogliamo che gli utenti debbano confermare la loro iscrizione via email.
-
-
 Ricordiamo che creare un model vuol dire andare a mettere una tabella nel nostro DB
 La migration che Devise genera permette di potere modificare il modello di default che Devise ha fatto per noi.
 Per esempio , vogliamo introdurre un nuovo attributo? (Come del resto ho fatto per inserire la colonna "admin")
 Andiamo a modificare la migration e poi la applichiamo.
-
-rake db:migrate e lo applichiamo
-
+rake db:migrate e lo applichiamo.
 
 Infine abbiamo il route devise_for che è stato aggiunto al file degli instradamenti per noi. Se lanciamo rake routes, possiamo vedere gli instradamenti che questa linea di codice crea:
 
-
 devise_for :users
 
-
 Anche se è un po’ difficile da leggere, possiamo vedere che ci sono molti instradamenti di autenticazione inclusi per il sign-in e il sign-out, il reset delle password, l’autenticazione come nuovo utente ed il reset di un profilo. Questi instradamenti sono tutti personalizzabili se volessimo cambiarli.
-Comunque la cosa importante è che vediamo che viene richiamato un controller chiamato session quando logghiamo, slogghiamo etc etc.
-Il controller lo genera Devise per noi.
+Comunque la cosa importante è che vediamo che viene richiamato un controller chiamato session quando logghiamo, slogghiamo etc etc. Il controller lo genera Devise per noi.
 In pratica , quando aggiungiamo devise_for :user stiamo mappando le richeste relative gli utenti
 al controller di devise.
-
-
 Possiamo ora accedere al nostro meccanismo di autenticazione mediante questi route. Se andiamo all’URL /users/sign_up vediamo la form di autenticazione come nuovo utente.
-
-
 
 user_signed_in?, che viene fornito da devise e che restituisce true se l’utente corrente è autenticato.
 Possiamo mostrare l’indirizzo email chiamando current_user per avere un riferimento all’oggetto User dell’utente corrente e mostrarne la proprietà email. 
-
 
 Se si volesse cambiare il comportamento di Devise , per esempio per creare un nuovo utente, non conviene andare
 a modificare la gemma. Conviene , invece , creare un controller (facendolo ereditare da Devise::SessionsController ) e con un override scrivere il proprio comportamento. 
@@ -74,14 +63,13 @@ class SessionsController < Devise::SessionsController
 
 Cosi creiamo il nostro SessionController personale.
 
-
-Rails 4 ha spostato i parameter sanitization dal model al controller , facendo si che ande devise dovesse
+Rails 4 ha spostato i parameter sanitization dal model al controller , facendo si che anche devise dovesse
 gestire i suddetti parametri nel suo controller.
 
 CONTROLLER FILTERS E HELPERS
 ______________________________
 
-devise creerà molti helpers per poterli inserire nei vostri controller e views , e facilitarvi il lavoro.
+Devise creerà molti helpers per poterli inserire nei vostri controller e views , e facilitarvi il lavoro.
 Per esempio, per fare in modo che un controller possa essere acceduto solamente dagli utenti presenti nel database, bisogna aggiungere all'inizio del controller : before_action
 In pratica , prima di ogni azione che richiediamo in questo controller , andiamo a chiamare una funzione
 di callback che andrà a verificare se l'utente che ha fatto accesso al controller abbia le giuste credenziali.
@@ -103,8 +91,14 @@ In pratica chiede a Rack se l'utente è stato autenticato tramite la sua passwor
  env['warden'].authenticate!(:password)
 
 
-Per verificare se un utente è loggatousiamo l'helper
-Il metodo user_signed_in? controlla la sessione just checks for a key in the session, as Mark pointed out.
+HELPERS
+______________________________
+
+
+user_signed_in?
+
+Per verificare se un utente è loggato usiamo l'helper user_signed_in?
+Il metodo user_signed_in? controlla la sessione.
 user_signed_in?
 
 
@@ -121,6 +115,18 @@ end
 
 warden prende la sessione dell'utente e ritorna l'user che è collegato in questo momento
 ovvero quello che ha la sessione attiva.
+
+
+user_session
+
+Con user_session possiamo ritornare la sessione dell'utente.
+
+After signing in a user, confirming the account or updating the password, Devise will look for a scoped root path to redirect to. For instance, when using a :user resource, the user_root_path will be used if it exists; otherwise, the default root_path will be used. 
+
+
+
+COME FUNZIONA IL SESSION
+______________________________
 
 >> app.session
 {
@@ -176,11 +182,8 @@ Right, given a session cookie we wanted to figure out if the user has been autho
 
 
 
-user_session
 
-Con user_session possiamo ritornare la sessione dell'utente.
 
-After signing in a user, confirming the account or updating the password, Devise will look for a scoped root path to redirect to. For instance, when using a :user resource, the user_root_path will be used if it exists; otherwise, the default root_path will be used. 
 
 
 
