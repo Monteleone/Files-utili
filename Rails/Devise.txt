@@ -7,8 +7,12 @@ Da leggere in accopiata di Sessioni Rails.txt
 
 
 
+BACKGROUND
+____________________
 
-Background
+
+Devise è costruito sopra una libreria chiamata Warden (trad: Guardiano! che figata!)
+
 
 Devise is built on top of a library called Warden. Warden is a low-level authentication library for Rack and works as a piece of middleware in the stack. Warden provides the basis for Strategies by implementing a Base strategy from which others must inherit.
 
