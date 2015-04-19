@@ -54,7 +54,8 @@ devise_for :users
 Anche se è un po’ difficile da leggere, possiamo vedere che ci sono molti instradamenti di autenticazione inclusi per il sign-in e il sign-out, il reset delle password, l’autenticazione come nuovo utente ed il reset di un profilo. Questi instradamenti sono tutti personalizzabili se volessimo cambiarli.
 Comunque la cosa importante è che vediamo che viene richiamato un controller chiamato session quando logghiamo, slogghiamo etc etc.
 Il controller lo genera Devise per noi.
-
+In pratica , quando aggiungiamo devise_for :user stiamo mappando le richeste relative gli utenti
+al controller di devise.
 
 
 Possiamo ora accedere al nostro meccanismo di autenticazione mediante questi route. Se andiamo all’URL /users/sign_up vediamo la form di autenticazione come nuovo utente.
@@ -74,27 +75,110 @@ class SessionsController < Devise::SessionsController
 Cosi creiamo il nostro SessionController personale.
 
 
+Rails 4 ha spostato i parameter sanitization dal model al controller , facendo si che ande devise dovesse
+gestire i suddetti parametri nel suo controller.
 
-When you customize your own views, you may end up adding new attributes to forms. Rails 4 moved the parameter sanitization from the model to the controller, causing Devise to handle this concern at the controller as well.
-Controller filters and helpers
+CONTROLLER FILTERS E HELPERS
+______________________________
 
-Devise will create some helpers to use inside your controllers and views. To set up a controller with user authentication, just add this before_action (assuming your devise model is 'User'):
+devise creerà molti helpers per poterli inserire nei vostri controller e views , e facilitarvi il lavoro.
+Per esempio, per fare in modo che un controller possa essere acceduto solamente dagli utenti presenti nel database, bisogna aggiungere all'inizio del controller : before_action
+In pratica , prima di ogni azione che richiediamo in questo controller , andiamo a chiamare una funzione
+di callback che andrà a verificare se l'utente che ha fatto accesso al controller abbia le giuste credenziali.
+La funzione in questione è la:  authenticate_user!
 
 before_action :authenticate_user!
 
-If your devise model is something other than User, replace "_user" with "_yourmodel". The same logic applies to the instructions below.
+Il metodo sopra riportato , è scritto tramite metaprogrammazione
 
-To verify if a user is signed in, use the following helper:
+ def authenticate_#{mapping}!(opts={})
+    opts[:scope] = :#{mapping}
+    warden.authenticate!(opts) if !devise_controller? || opts.delete(:force)
+  end
+  ...
+end
 
+In pratica chiede a Rack se l'utente è stato autenticato tramite la sua password
+
+ env['warden'].authenticate!(:password)
+
+
+Per verificare se un utente è loggatousiamo l'helper
+Il metodo user_signed_in? controlla la sessione just checks for a key in the session, as Mark pointed out.
 user_signed_in?
 
-For the current signed-in user, this helper is available:
+
 
 current_user
+current_user è definito dinamicamente in Devise. Questo perchè possiamo chiamare il suddetto metodo per
+un qualsiasi model che abbiamo definito.  current_whatever
 
-You can access the session for this scope:
+
+def current_#{mapping}
+    @current_#{mapping} ||= warden.authenticate(:scope => :#{mapping})
+end
+
+
+warden prende la sessione dell'utente e ritorna l'user che è collegato in questo momento
+ovvero quello che ha la sessione attiva.
+
+>> app.session
+{
+ "_csrf_token"=>"dT0/BqgLb84bnE+f1g...",
+ "warden.user.user.key"=>["User", [42843], "$2a$10$1OU.1BixIba..."],
+ "session_id"=>"0dd49c05ff4e6362c207c6eb877f86cd"
+}
+
+"warden.user.user.key"=>["User", [42843], "$2a$10$1OU.1BixIba..."] , sicuramente con questo andiamo a controllare
+nel db.
+
+Spiegato ,forse meglio:
+
+session is:
+
+{"session_id"=>"be02f27d504672bab3408a0ccf5c1db5", "_csrf_token"=>"DKaCNX3/DMloaCHbVSNq33NJjYIg51X0z/p2T1VRzfY=", "warden.user.user.key"=>["User", [3], "$2a$10$5HFWNuz5p6fT3Z4ZvJfQq."]}
+
+session["warden.user.user.key"][1][0], then is 3.
+
+So, I'd find it as:
+
+User.find(session["warden.user.user.key"][1][0])
+
+
+When you login a user(Devise model name User), a key "warden.user.model_name.key" is created which in your case is "warden.user.user.key".
+A devise session is stored as warden user key. You can find the user ID by devise session key
+
+For example:
+
+{ warden.user.user.key => [[1], "$2a$10$KItas1NKsvunK0O5w9ioWu"] }
+
+where
+
+1 is the id of the logged in user.
+
+$2a$10$KItas1NKsvunK0O5w9ioWu aka long-random-string is the partial encrypted password of user with id 1.
+
+You can verify this by going on rails console and executing
+
+User.find(1).encrypted_password  
+## => "$2a$10$KItas1NKsvunK0O5w9ioWuWp4wbZ4iympYMqVCRmmvTGapktKqdMe"
+
+
+Right, given a session cookie we wanted to figure out if the user has been authorized and authenticate him/her in our Go app. To do this we need to know how devise stores the authorized user. The easies way is to take a cookie for one of your Rails apps that uses devise and decrypt it as shown above. Most likely you will get something like this:
+
+{
+  "session_id"           => "974561a18fc4aa7e44a19240647abaf4e",
+  "warden.user.user.key" => [[1], "$2a$10$QOxmmQkm8i8WJ85TE9.cZO"],
+  "_csrf_token"          => "jtbd2pGvI1AMIM3KqesbjU1K4wv3blFLp2tert3D8sc="
+}
+
+
+
+
 
 user_session
+
+Con user_session possiamo ritornare la sessione dell'utente.
 
 After signing in a user, confirming the account or updating the password, Devise will look for a scoped root path to redirect to. For instance, when using a :user resource, the user_root_path will be used if it exists; otherwise, the default root_path will be used. 
 
@@ -124,6 +208,79 @@ https://github.com/hassox/warden/blob/master/lib/warden/mixins/common.rb
 
 Come vediamo Warden si appoggia a Rack , dal quale prende env[rack.session] e la ritorna
 Definiamo un alias del tipo:   :session per accedere piu' facilmente alla sessione.
+
+
+
+session is a method that is part of some web frameworks, for example Sinatra and Rails both have session methods. Plain rack applications don’t have a session method, unless you add one yourself.
+
+The session hash is stored in the rack env hash under the key rack.session, so you can access it like this (assuming you’ve named the rack environment to your app env):
+
+env['rack.session'][:msg]="Hello Rack"
+
+Alternatively, you could use Rack’s built in request object, like this:
+
+request = Rack::Request.new(env)
+request.session[:msg]="Hello Rack"
+
+
+
+
+
+
+
+
+
+secret_key_base is a long, pseudorandom string of hex characters in Rails versions 4.0 and later (it was named secret_token in earlier versions and was used slightly differently). It is used to generate an encryption key that encrypts and signs your session data that is stored in your users’ cookies.
+
+A secret_key_base should look something like this:
+
+    2f4cef0a1548b04ad4825bfc3b7502fb3e801ff546b2815b9dfff06a40483207 76f08ac0052bef106bb44bae8c5516d1250c3b4f6448dc4e144fddff6b902351
+
+It is used to create something like this:
+
+    MUZQenBHbjdEQ0N6ZXU1c2E1MUc1a200cVVJOFNMSHdHRkJTNnNibGZ 3dmE0OWd4SE9VcjVYVVJBN2VISlVEZlZLZTIrVnFmbktLQlZLcXo3bEdBRC svSitqWTJiNUdVbUN6VGZCcEtna0VOemQ2cXR2WGM5VnF5MEtPakNMR m5aVXFDaitCbVdvVWVCZzYyN1hXbWhCY3pNMVVuRXJnSGZOZHNUdlh hbXM1bWRqYmRuNG5oTkxaTDlBbk92ejdmOTVLbGxSRnhtTXh3dEJ2eWM 5d3d4T0R6V1JwN1E5R0pXSmR1eC94VlZKenZrOUU3TTl4U3FZMHZVak4z bG5JUktMUjE5OHkrTm5rQUZ4S1JUZTgrRFVGQ2kxc3ozQ3YyRmhZSk5X WDZrdCsxM1E4UjBWdXdYbFAzcGI5UFdvU0lQbEUyVGN5b2wzcGZIWWVk aXkrTWtnPT0tLUtmVXZoLzRTcmw1SFZkTm5wRTJBbnc9PQ%3D%3D– dae46f90d49d52782862a37a4173b1dbc4054f2d
+
+That is an encrypted and signed value that is stored client-side in a cookie. The encrypted string and signature are delimited by the double hyphen (–).
+
+
+If you login as a user (username: hank@example.com, pw: password) and (in Chrome) go to View -> Developer -> Developer Tools and then click on the Resources tab you should see something like this:
+Click on the arrow next to the Cookies item as shown above, and then click localhost from the list. You should see your encrypted and signed session cookie value. This has been encrypted and signed using exactly the method previously described.
+
+If you want to decrypt this session cookie and see what it contains, run the following from the application root:
+
+$ rails runner lib/decrypt_session_cookie.rb
+
+Paste your encrypted session cookie value when prompted and the script will return the decrypted value. For example, I get the following when I run this script and decrypt my session cookie:
+
+Value for _sessiongoat_session:
+MUZQenBHbjdEQ0N6ZXU1c2E1MUc1a200cVVJOFNMSHdHRkJTNnNibGZ
+3dmE0OWd4SE9VcjVYVVJBN2VISlVEZlZLZTIrVnFmbktLQlZLcXo3bEdBRC
+svSitqWTJiNUdVbUN6VGZCcEtna0VOemQ2cXR2WGM5VnF5MEtPakNMR
+m5aVXFDaitCbVdvVWVCZzYyN1hXbWhCY3pNMVVuRXJnSGZOZHNUdlh
+hbXM1bWRqYmRuNG5oTkxaTDlBbk92ejdmOTVLbGxSRnhtTXh3dEJ2eWM
+5d3d4T0R6V1JwN1E5R0pXSmR1eC94VlZKenZrOUU3TTl4U3FZMHZVak4z
+bG5JUktMUjE5OHkrTm5rQUZ4S1JUZTgrRFVGQ2kxc3ozQ3YyRmhZSk5X
+WDZrdCsxM1E4UjBWdXdYbFAzcGI5UFdvU0lQbEUyVGN5b2wzcGZIWWVk
+aXkrTWtnPT0tLUtmVXZoLzRTcmw1SFZkTm5wRTJBbnc9PQ%3D%3D--
+dae46f90d49d52782862a37a4173b1dbc4054f2d
+
+Decrypted hash is:
+ {"session_id"=>"809617b8c8efc7bd60a0cd7382e0785a", "warden.user.user.key"=>[[1], "$2a$10$shYu646nn4CV9Vujs/VvgO"], "flash"=>{"discard"=>["notice"], "flashes"=>{"notice"=>"Signed in successfully."}}, "_csrf_token"=>"Tv6oJT/Etv/MoD3c6ZYCazG2OiEcFbtY+hvTkIJY2io="}
+
+You may notice in the decrypted session cookie hash the warden.user.user.key key. This is authentication information that is stored client-side (by default) and is what the Devise gem uses to keep track of which user you are. In this case, 1 is the user id and $2a$10$shYu646nn4CV9Vujs/VvgO is the first 30 characters of the password hash.
+The password hash is generated using bcrypt. bcrypt is a key derivation function and, like PBKDF2, is designed to be slow to defeat brute force attacks. It is a commonly used algorithm for hashing passwords that are stored. It may seem like a problem to expose this information client side, but the only thing that is exposed is some information that the bcrypt algorithm uses and the salt for the password. The salt by itself is not very useful information to an attacker.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
