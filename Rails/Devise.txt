@@ -12,14 +12,10 @@ ____________________
 
 
 Devise è costruito sopra una libreria chiamata Warden (trad: Guardiano! che figata!)
+Warden è una libreria per l'autenticazione di basso livello ed è il middleware che fa comunicare Rails con 
+le richieste HTTP e che tramuta le risposte Rails in risposte HTTP per il browser del client.
 
-
-Devise is built on top of a library called Warden. Warden is a low-level authentication library for Rack and works as a piece of middleware in the stack. Warden provides the basis for Strategies by implementing a Base strategy from which others must inherit.
-
-Devise actually declares 2 strategies Authenticatable and DatabaseAuthenticatable of which you can choose :database_authenticatable. Authenticatable inherits from Wardens Base Strategy and DatabaseAuthenticatable inherits from Authenticatable.
-
-
-
+(Leggere Warden nel file Sessioni Rails.txt)
 
 
 Devise è modulare e al momento è formato da undici moduli, ciascuno dei quali fornisce un aspetto differente di autenticazione. Per esempio uno dei moduli, Rememberable, si ricorda l’autenticazione dell’utente memorizzata in un cookie mentre un’altra, Recoverable, si occupa di resettare la password dell’utente e di mandare le istruzioni per il reset via email. Questo approccio rende semplice la scelta di quali parti dell’autenticazione si vogliono usare (e quali no) all’interno della propria applicazione.
@@ -101,3 +97,35 @@ You can access the session for this scope:
 user_session
 
 After signing in a user, confirming the account or updating the password, Devise will look for a scoped root path to redirect to. For instance, when using a :user resource, the user_root_path will be used if it exists; otherwise, the default root_path will be used. 
+
+
+
+UN POCO PIU' IN PROFONDITA' :
+______________________________
+
+Nel github degli sviluppatori di Warden:
+
+https://github.com/hassox/warden/blob/master/lib/warden/mixins/common.rb
+
+ warden/lib/warden/mixins/common.rb
+
+
+      # Convenience method to access the session
+      # :api: public
+      def session
+        env['rack.session']
+      end # session
+
+      # Alias :session to :raw_session since the former will be user API for storing scoped data.
+      alias :raw_session :session
+		
+			...
+			...
+
+Come vediamo Warden si appoggia a Rack , dal quale prende env[rack.session] e la ritorna
+Definiamo un alias del tipo:   :session per accedere piu' facilmente alla sessione.
+
+
+
+
+
