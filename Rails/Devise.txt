@@ -101,6 +101,11 @@ Per verificare se un utente è loggato usiamo l'helper user_signed_in?
 Il metodo user_signed_in? controlla la sessione.
 user_signed_in?
 
+def #{group_name}_signed_in?
+              #{mappings}.any? do |mapping|
+                warden.authenticate?(scope: mapping)
+              end
+            end
 
 
 current_user
@@ -121,6 +126,18 @@ user_session
 
 Con user_session possiamo ritornare la sessione dell'utente.
 
+  def #{mapping}_session
+      current_#{mapping} && warden.session(:#{mapping})
+  end
+
+ warden.session:
+
+
+    def session
+      env["rack.session"] || {}
+    end
+  end # SessionSerializer
+
 After signing in a user, confirming the account or updating the password, Devise will look for a scoped root path to redirect to. For instance, when using a :user resource, the user_root_path will be used if it exists; otherwise, the default root_path will be used. 
 
 
@@ -128,67 +145,16 @@ After signing in a user, confirming the account or updating the password, Devise
 COME FUNZIONA IL SESSION
 ______________________________
 
-Quando un utente si collega per la prima volta al server , gli viene restituito un cookie 
-Dopo che avrà effettuato il log in 
-
-
->> app.session
-{
- "_csrf_token"=>"dT0/BqgLb84bnE+f1g...",
- "warden.user.user.key"=>["User", [42843], "$2a$10$1OU.1BixIba..."],
- "session_id"=>"0dd49c05ff4e6362c207c6eb877f86cd"
-}
-
-"warden.user.user.key"=>["User", [42843], "$2a$10$1OU.1BixIba..."] , sicuramente con questo andiamo a controllare
-nel db.
-
-Spiegato ,forse meglio:
-
-session is:
-
-{"session_id"=>"be02f27d504672bab3408a0ccf5c1db5", "_csrf_token"=>"DKaCNX3/DMloaCHbVSNq33NJjYIg51X0z/p2T1VRzfY=", "warden.user.user.key"=>["User", [3], "$2a$10$5HFWNuz5p6fT3Z4ZvJfQq."]}
-
-session["warden.user.user.key"][1][0], then is 3.
-
-So, I'd find it as:
-
-User.find(session["warden.user.user.key"][1][0])
-
-
-When you login a user(Devise model name User), a key "warden.user.model_name.key" is created which in your case is "warden.user.user.key".
-A devise session is stored as warden user key. You can find the user ID by devise session key
-
-For example:
-
-{ warden.user.user.key => [[1], "$2a$10$KItas1NKsvunK0O5w9ioWu"] }
-
-where
-
-1 is the id of the logged in user.
-
-$2a$10$KItas1NKsvunK0O5w9ioWu aka long-random-string is the partial encrypted password of user with id 1.
-
-You can verify this by going on rails console and executing
-
-User.find(1).encrypted_password  
-## => "$2a$10$KItas1NKsvunK0O5w9ioWuWp4wbZ4iympYMqVCRmmvTGapktKqdMe"
-
-
-Right, given a session cookie we wanted to figure out if the user has been authorized and authenticate him/her in our Go app. To do this we need to know how devise stores the authorized user. The easies way is to take a cookie for one of your Rails apps that uses devise and decrypt it as shown above. Most likely you will get something like this:
-
+Quando un utente si collega per la prima volta al server , gli viene restituito un cookie prima e
+dopo che avrà effettuato il log in 
+La maniera piu' semplice per verificare che un utente sia autenticato è quello di utilizzare un cookie (cifrato)
+per salvare le credenziali dell'utente 
+Il cookie sarà qualcosa di questo tipo:
 {
   "session_id"           => "974561a18fc4aa7e44a19240647abaf4e",
   "warden.user.user.key" => [[1], "$2a$10$QOxmmQkm8i8WJ85TE9.cZO"],
   "_csrf_token"          => "jtbd2pGvI1AMIM3KqesbjU1K4wv3blFLp2tert3D8sc="
 }
-
-
-
-
-
-
-
-
 
 
 UN POCO PIU' IN PROFONDITA' :
@@ -217,10 +183,8 @@ Come vediamo Warden si appoggia a Rack , dal quale prende env[rack.session] e la
 Definiamo un alias del tipo:   :session per accedere piu' facilmente alla sessione.
 
 
-
-session is a method that is part of some web frameworks, for example Sinatra and Rails both have session methods. Plain rack applications don’t have a session method, unless you add one yourself.
-
-The session hash is stored in the rack env hash under the key rack.session, so you can access it like this (assuming you’ve named the rack environment to your app env):
+L' hash della sessione è salvato in un hash di rack che si puo' richiamare come: rack.session
+Con questo possiamo accedere alla sessione , assumendo che la variabile di enviroment di rack sia appunto "env"
 
 env['rack.session'][:msg]="Hello Rack"
 
@@ -232,34 +196,33 @@ request.session[:msg]="Hello Rack"
 
 
 
+secret_key_base in Rails 4 è un long , pseudorandom di caratteri in esadecimale
+Prima della versione 4 era stato chiamato come secret_token. Questo valore è usato per generare una chiave
+per cifrare e firmare i dati di una sessione che sono salvati nei cookies.
+Una secret_key_base è qualcosa di questo tipo:
 
 
+2f4cef0a1548b04ad4825bfc3b7502fb3e801ff546b2815b9dfff06a40483207 76f08ac0052bef106bb44bae8c5516d1250c3b4f6448dc4e144fddff6b902351
 
-
-
-secret_key_base is a long, pseudorandom string of hex characters in Rails versions 4.0 and later (it was named secret_token in earlier versions and was used slightly differently). It is used to generate an encryption key that encrypts and signs your session data that is stored in your users’ cookies.
-
-A secret_key_base should look something like this:
-
-    2f4cef0a1548b04ad4825bfc3b7502fb3e801ff546b2815b9dfff06a40483207 76f08ac0052bef106bb44bae8c5516d1250c3b4f6448dc4e144fddff6b902351
-
-It is used to create something like this:
+Ed è usato per creare qualcosa di questo tipo:
 
     MUZQenBHbjdEQ0N6ZXU1c2E1MUc1a200cVVJOFNMSHdHRkJTNnNibGZ 3dmE0OWd4SE9VcjVYVVJBN2VISlVEZlZLZTIrVnFmbktLQlZLcXo3bEdBRC svSitqWTJiNUdVbUN6VGZCcEtna0VOemQ2cXR2WGM5VnF5MEtPakNMR m5aVXFDaitCbVdvVWVCZzYyN1hXbWhCY3pNMVVuRXJnSGZOZHNUdlh hbXM1bWRqYmRuNG5oTkxaTDlBbk92ejdmOTVLbGxSRnhtTXh3dEJ2eWM 5d3d4T0R6V1JwN1E5R0pXSmR1eC94VlZKenZrOUU3TTl4U3FZMHZVak4z bG5JUktMUjE5OHkrTm5rQUZ4S1JUZTgrRFVGQ2kxc3ozQ3YyRmhZSk5X WDZrdCsxM1E4UjBWdXdYbFAzcGI5UFdvU0lQbEUyVGN5b2wzcGZIWWVk aXkrTWtnPT0tLUtmVXZoLzRTcmw1SFZkTm5wRTJBbnc9PQ%3D%3D– dae46f90d49d52782862a37a4173b1dbc4054f2d
 
-That is an encrypted and signed value that is stored client-side in a cookie. The encrypted string and signature are delimited by the double hyphen (–).
 
+Che è un valore cifrato e firmato , salvato client-side in un cookie. La stringa cifrata e firmata è delimitata da due simboli "-"
+Se logghiamo come user (username: hank@example.com, pw: password) e (in Chrome)andiamo in View -> Developer -> Developer Tools e clicchiamo su Risorse , dovfemmo vedere qualcosa di questo tipo:
+Clicchiamo sui cookies e vediamo il suo valore. E' cifrato e segnato esattamente con il metodo sopra descritto
 
-If you login as a user (username: hank@example.com, pw: password) and (in Chrome) go to View -> Developer -> Developer Tools and then click on the Resources tab you should see something like this:
-Click on the arrow next to the Cookies item as shown above, and then click localhost from the list. You should see your encrypted and signed session cookie value. This has been encrypted and signed using exactly the method previously described.
+Se volessimo decifrare un cookie session e vedere cosa contenga, dobbiamo fare partire dall'application root:
 
-If you want to decrypt this session cookie and see what it contains, run the following from the application root:
 
 $ rails runner lib/decrypt_session_cookie.rb
 
-Paste your encrypted session cookie value when prompted and the script will return the decrypted value. For example, I get the following when I run this script and decrypt my session cookie:
+Incollare il session cookie che è cifrato e farci restituire il decifrato. Come per esempio:
+
 
 Value for _sessiongoat_session:
+
 MUZQenBHbjdEQ0N6ZXU1c2E1MUc1a200cVVJOFNMSHdHRkJTNnNibGZ
 3dmE0OWd4SE9VcjVYVVJBN2VISlVEZlZLZTIrVnFmbktLQlZLcXo3bEdBRC
 svSitqWTJiNUdVbUN6VGZCcEtna0VOemQ2cXR2WGM5VnF5MEtPakNMR
@@ -272,11 +235,21 @@ aXkrTWtnPT0tLUtmVXZoLzRTcmw1SFZkTm5wRTJBbnc9PQ%3D%3D--
 dae46f90d49d52782862a37a4173b1dbc4054f2d
 
 Decrypted hash is:
- {"session_id"=>"809617b8c8efc7bd60a0cd7382e0785a", "warden.user.user.key"=>[[1], "$2a$10$shYu646nn4CV9Vujs/VvgO"], "flash"=>{"discard"=>["notice"], "flashes"=>{"notice"=>"Signed in successfully."}}, "_csrf_token"=>"Tv6oJT/Etv/MoD3c6ZYCazG2OiEcFbtY+hvTkIJY2io="}
 
-You may notice in the decrypted session cookie hash the warden.user.user.key key. This is authentication information that is stored client-side (by default) and is what the Devise gem uses to keep track of which user you are. In this case, 1 is the user id and $2a$10$shYu646nn4CV9Vujs/VvgO is the first 30 characters of the password hash.
-The password hash is generated using bcrypt. bcrypt is a key derivation function and, like PBKDF2, is designed to be slow to defeat brute force attacks. It is a commonly used algorithm for hashing passwords that are stored. It may seem like a problem to expose this information client side, but the only thing that is exposed is some information that the bcrypt algorithm uses and the salt for the password. The salt by itself is not very useful information to an attacker.
+ {
+ "session_id"=>"809617b8c8efc7bd60a0cd7382e0785a",
+ "warden.user.user.key"=>[[1], "$2a$10$shYu646nn4CV9Vujs/VvgO"],
+ "flash"=>{"discard"=>["notice"],
+ "flashes"=>{"notice"=>"Signed in successfully."}},
+ "_csrf_token"=>"Tv6oJT/Etv/MoD3c6ZYCazG2OiEcFbtY+hvTkIJY2io="
+ }
 
+
+Possiamo notare che il cookie decrittato della sessione ha un warden.user.user.key key
+Questa è una informazione salvata client-side (di default) ed è quello che la gemma Devise usa per tenere traccia di quale utente siamo. In questo caso , 1 è l'id dell'user e $2a$10$shYu646nn4CV9Vujs/VvgO sono i primi 30 caratteri 
+della password dell'utente. La password è generata grazie a bcrypt. Bcrypt è una funzione basata su key, come PBKDF2, che è progettata per essere lenta,  in modo da fare rallentare notevolmente gli attacchi Brute Force.
+E' un algoritmo molto comune , usato con funzioni di hashing per cifrare le password e salvarle.
+It may seem like a problem to expose this information client side, but the only thing that is exposed is some information that the bcrypt algorithm uses and the salt for the password. The salt by itself is not very useful information to an attacker.
 
 
 
