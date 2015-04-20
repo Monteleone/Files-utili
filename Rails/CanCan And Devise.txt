@@ -125,13 +125,6 @@ verify if current_user can :index current_user #pseudo-code
 
 
 
-
-
-
-
-
-
-
 In Devise, invece, vediamo:
 
 
